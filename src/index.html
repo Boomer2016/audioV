@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>audioV</title>
+    <script type="module">
+      const loadAudio = async () => {
+        try {
+          const res = await fetch('/getBuffer').then((res) => res.json());
+          return res;
+        } catch (err) {
+          return null;
+        }
+      };
+      const getWaveData = async () => {
+        try {
+          const audioContext = new AudioContext();
+          // 获取文件buffer
+          const res = await loadAudio();
+          // buffer 转为arrayBuffer
+          const arrayBuff = new Uint8Array(res.content.data).buffer;
+          console.log(arrayBuff, 'arrayBuff');
+          // decodeAudioData用于异步解码音频文件的音频文件
+          const channelData = await audioContext.decodeAudioData(arrayBuff);
+          console.log(channelData, 'channelData');
+          // AudioBuffer 接口的getChannelData()方法返回一Float32Array (en-US) ，其中包含与通道关联的PCM数据，通道参数定义(0表示第一个通道)
+          const waveData = channelData.getChannelData(0);
+          return waveData;
+        } catch (err) {
+          console.log('errr2');
+          return [];
+        }
+      };
+
+      getWaveData().then((res) => {
+        console.log(res);
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="root">audioV</div>
+  </body>
+</html>
