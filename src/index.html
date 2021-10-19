@@ -1,45 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>audioV</title>
-    <script type="module">
-      const loadAudio = async () => {
-        try {
-          const res = await fetch('/getBuffer').then((res) => res.json());
-          return res;
-        } catch (err) {
-          return null;
-        }
-      };
-      const getWaveData = async () => {
-        try {
-          const audioContext = new AudioContext();
-          // 获取文件buffer
-          const res = await loadAudio();
-          // buffer 转为arrayBuffer
-          const arrayBuff = new Uint8Array(res.content.data).buffer;
-          console.log(arrayBuff, 'arrayBuff');
-          // decodeAudioData用于异步解码音频文件的音频文件
-          const channelData = await audioContext.decodeAudioData(arrayBuff);
-          console.log(channelData, 'channelData');
-          // AudioBuffer 接口的getChannelData()方法返回一Float32Array (en-US) ，其中包含与通道关联的PCM数据，通道参数定义(0表示第一个通道)
-          const waveData = channelData.getChannelData(0);
-          return waveData;
-        } catch (err) {
-          console.log('errr2');
-          return [];
-        }
-      };
+    <script>
+        const loadAudio = async() => {
+            try {
+                const res = await fetch('/getBuffer').then((res) => res.json());
+                return res;
+            } catch (err) {
+                return null;
+            }
+        };
+        const getAudioBuffer = async() => {
+            try {
+                const audioContext = new AudioContext();
+                // 获取文件buffer
+                const res = await loadAudio();
+                // buffer 转为arrayBuffer
+                const arrayBuff = new Uint8Array(res.content.data).buffer;
+                console.log(arrayBuff, 'arrayBuff');
+                // decodeAudioData用于异步解码音频文件的音频文件
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuff);
+                console.log(audioBuffer, 'audioBuffer');
+                return audioBuffer;
+            } catch (err) {
+                return null;
+            }
+        };
 
-      getWaveData().then((res) => {
-        console.log(res);
-      });
+        function clamp(num, a, b) {
+            return Math.max(Math.min(num, Math.max(a, b)), Math.min(a, b));
+        }
+        const draw = async() => {
+            try {
+                const audioBuffer = await getAudioBuffer();
+                const {
+                    length,
+                    duration,
+                    sampleRate
+                } = audioBuffer;
+                let beginTime = 0;
+                let stepIndex = 0;
+                let xIndex = 0;
+                let min = 1;
+                let max = -1;
+                let gridGap = 0;
+                let padding = 0;
+                let waveScale = 0.8;
+                const canvas = document.getElementById('wave');
+                const ctx = canvas.getContext('2d');
+                const middle = canvas.height / 2;
+                const startIndex = Math.floor(beginTime * sampleRate);
+                const endIndex = Math.floor(clamp((beginTime + duration) * sampleRate, startIndex, Infinity));
+                const step = Math.floor((endIndex - startIndex) / canvas.width);
+                const cursorX = 0;
+                const channelData = audioBuffer.getChannelData(0);
+                for (let i = startIndex; i < endIndex; i += 1) {
+                    stepIndex += 1;
+                    const item = channelData[i] || 0;
+                    if (item < min) {
+                        min = item;
+                    } else if (item > max) {
+                        max = item;
+                    }
+                    if (stepIndex >= step && xIndex < canvas.width) {
+                        xIndex += 1;
+                        const waveX = gridGap * padding + xIndex;
+                        // ctx.fillStyle = progress && cursorX >= waveX ? progressColor : waveColor;
+                        ctx.fillStyle = '#000000'
+                        ctx.fillRect(waveX, (1 + min * waveScale) * middle, 1, Math.max(1, (max - min) * middle * waveScale));
+                        stepIndex = 0;
+                        min = 1;
+                        max = -1;
+                    }
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        };
+        draw()
     </script>
-  </head>
+</head>
 
-  <body>
-    <div id="root">audioV</div>
-  </body>
+<body>
+    <div id="root">
+        <canvas width="600" height="400" id="wave"></canvas>
+    </div>
+</body>
+
 </html>
