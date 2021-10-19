@@ -50,6 +50,7 @@
                 let gridGap = 0;
                 let padding = 0;
                 let waveScale = 0.8;
+                let waveColor = '#000000';
                 const canvas = document.getElementById('wave');
                 const ctx = canvas.getContext('2d');
                 const middle = canvas.height / 2;
@@ -69,8 +70,7 @@
                     if (stepIndex >= step && xIndex < canvas.width) {
                         xIndex += 1;
                         const waveX = gridGap * padding + xIndex;
-                        // ctx.fillStyle = progress && cursorX >= waveX ? progressColor : waveColor;
-                        ctx.fillStyle = '#000000'
+                        ctx.fillStyle = waveColor
                         ctx.fillRect(waveX, (1 + min * waveScale) * middle, 1, Math.max(1, (max - min) * middle * waveScale));
                         stepIndex = 0;
                         min = 1;
